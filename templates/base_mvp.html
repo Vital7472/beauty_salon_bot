@@ -34,22 +34,22 @@
                     </h5>
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
+                            <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('admin.index') }}">
                                 <i class="bi bi-house-door"></i> Главная
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'gallery' in request.endpoint %}active{% endif %}" href="{{ url_for('gallery_list') }}">
+                            <a class="nav-link {% if 'gallery' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.gallery_list') }}">
                                 <i class="bi bi-images"></i> Галерея
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'orders' in request.endpoint %}active{% endif %}" href="{{ url_for('orders_list') }}">
+                            <a class="nav-link {% if 'orders' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.orders_list') }}">
                                 <i class="bi bi-cart"></i> Заказы цветов
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'users' in request.endpoint %}active{% endif %}" href="{{ url_for('users_list') }}">
+                            <a class="nav-link {% if 'users' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.users_list') }}">
                                 <i class="bi bi-people"></i> Пользователи
                             </a>
                         </li>
@@ -59,7 +59,7 @@
                             </a>
                         </li>
                         <li class="nav-item mt-5">
-                            <a class="nav-link" href="{{ url_for('logout') }}">
+                            <a class="nav-link" href="{{ url_for('admin.logout') }}">
                                 <i class="bi bi-box-arrow-right"></i> Выход
                             </a>
                         </li>
