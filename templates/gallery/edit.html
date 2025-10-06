@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Редактировать фото{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>✏️ Редактировать фото</h2>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Текущее фото -->
+                    <div class="text-center mb-4">
+                        <img src="{{ item.photo_url }}" alt="Фото" class="img-fluid rounded" style="max-height: 300px;">
+                    </div>
+
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Категория *</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Выберите категорию</option>
+                                <option value="Салон" {% if item.category == 'Салон' %}selected{% endif %}>Салон красоты</option>
+                                <option value="Цветы" {% if item.category == 'Цветы' %}selected{% endif %}>Цветочный магазин</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Описание</label>
+                            <textarea class="form-control" id="description" name="description"
+                                      rows="3" placeholder="Описание работы...">{{ item.description }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Стоимость (₽)</label>
+                            <input type="number" class="form-control" id="price" name="price"
+                                   value="{{ item.price }}" min="0" placeholder="0">
+                            <div class="form-text">
+                                Укажите 0, если не хотите отображать цену
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>ℹ️ Информация:</strong><br>
+                            <small>Добавлено: {{ item.created_at[:16] }}</small><br>
+                            <small>URL: {{ item.photo_url }}</small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                ✅ Сохранить изменения
+                            </button>
+                            <a href="{{ url_for('gallery_list') }}" class="btn btn-secondary">
+                                ◀️ Назад к галерее
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

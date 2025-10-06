@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Галерея{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📸 Галерея работ</h2>
+        <a href="{{ url_for('gallery_add') }}" class="btn btn-primary">➕ Добавить фото</a>
+    </div>
+
+    <!-- Фильтр по категории -->
+    <div class="mb-3">
+        <form method="GET" class="row g-3">
+            <div class="col-auto">
+                <label class="form-label">Фильтр по категории:</label>
+            </div>
+            <div class="col-auto">
+                <select name="category" class="form-select" onchange="this.form.submit()">
+                    <option value="">Все</option>
+                    <option value="Салон" {% if category == 'Салон' %}selected{% endif %}>Салон</option>
+                    <option value="Цветы" {% if category == 'Цветы' %}selected{% endif %}>Цветы</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Галерея фото -->
+    <div class="row">
+        {% if gallery_items %}
+            {% for item in gallery_items %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    {% if item.photo_url %}
+                        <img src="{{ item.photo_url }}" class="card-img-top" alt="{{ item.description }}" style="height: 250px; object-fit: cover;">
+                    {% else %}
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
+                            <span class="text-muted">📷 Нет фото</span>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <p class="card-text">
+                            <span class="badge bg-secondary">{{ item.category }}</span>
+                            {% if item.price > 0 %}
+                                <span class="badge bg-success">{{ item.price }} ₽</span>
+                            {% endif %}
+                            <br>
+                            {{ item.description or 'Без описания' }}
+                        </p>
+                        <small class="text-muted">Добавлено: {{ item.created_at[:10] }}</small>
+                    </div>
+                    <div class="card-footer d-flex gap-2">
+                        <a href="{{ url_for('gallery_edit', item_id=item.id) }}" class="btn btn-sm btn-primary">
+                            ✏️ Редактировать
+                        </a>
+                        <form method="POST" action="{{ url_for('gallery_delete', item_id=item.id) }}" onsubmit="return confirm('Удалить это фото?');" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-danger">🗑️ Удалить</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    В галерее пока нет фотографий
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="mt-3">
+        <p class="text-muted">
+            <strong>Всего фотографий:</strong> {{ gallery_items|length }}
+        </p>
+    </div>
+</div>
+{% endblock %}

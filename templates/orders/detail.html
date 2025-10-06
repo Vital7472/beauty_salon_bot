@@ -1,0 +1,147 @@
+{% extends "base_mvp.html" %}
+
+{% block title %}Заказ #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Заказ #{{ order.id }}</h3>
+    <a href="{{ url_for('orders_list') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Назад к списку
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Информация о заказе</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="200">Клиент:</th>
+                        <td><strong>{{ order.user_name }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Телефон:</th>
+                        <td><a href="tel:{{ order.phone }}">{{ order.phone }}</a></td>
+                    </tr>
+                    <tr>
+                        <th>Дата заказа:</th>
+                        <td>{{ order.created_at }}</td>
+                    </tr>
+                    <tr>
+                        <th>Тип доставки:</th>
+                        <td>{{ order.delivery_type }}</td>
+                    </tr>
+                    <tr>
+                        <th>Адрес доставки:</th>
+                        <td>{{ order.delivery_address or '—' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Желаемое время:</th>
+                        <td>{{ order.delivery_time or '—' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Анонимно:</th>
+                        <td>{% if order.anonymous %}Да{% else %}Нет{% endif %}</td>
+                    </tr>
+                    {% if order.recipient_name %}
+                    <tr>
+                        <th>Получатель:</th>
+                        <td>{{ order.recipient_name }} ({{ order.recipient_phone }})</td>
+                    </tr>
+                    {% endif %}
+                    {% if order.card_text %}
+                    <tr>
+                        <th>Текст открытки:</th>
+                        <td>{{ order.card_text }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-cart"></i> Состав заказа</h5>
+            </div>
+            <div class="card-body">
+                {% set items = order.items|parse_json %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Товар</th>
+                            <th>Количество</th>
+                            <th>Цена</th>
+                            <th>Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.quantity }} шт.</td>
+                            <td>{{ item.price }}₽</td>
+                            <td><strong>{{ item.quantity * item.price }}₽</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end"><strong>ИТОГО:</strong></td>
+                            <td><strong class="h5">{{ order.total_amount }}₽</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Управление</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Текущий статус:</strong></p>
+                {% if order.status == 'new' %}
+                <span class="badge bg-secondary fs-6">Новый</span>
+                {% elif order.status == 'accepted' %}
+                <span class="badge bg-info fs-6">Принят</span>
+                {% elif order.status == 'delivering' %}
+                <span class="badge bg-primary fs-6">В доставке</span>
+                {% elif order.status == 'delivered' %}
+                <span class="badge bg-success fs-6">Доставлен</span>
+                {% elif order.status == 'cancelled' %}
+                <span class="badge bg-danger fs-6">Отменен</span>
+                {% endif %}
+
+                <hr>
+
+                <form method="POST" action="{{ url_for('order_update_status', order_id=order.id) }}">
+                    <label class="form-label"><strong>Изменить статус:</strong></label>
+                    <select name="status" class="form-select mb-3" required>
+                        <option value="">-- Выберите статус --</option>
+                        <option value="new" {% if order.status == 'new' %}disabled{% endif %}>Новый</option>
+                        <option value="accepted" {% if order.status == 'accepted' %}disabled{% endif %}>Принят</option>
+                        <option value="delivering" {% if order.status == 'delivering' %}disabled{% endif %}>В доставке</option>
+                        <option value="delivered" {% if order.status == 'delivered' %}disabled{% endif %}>Доставлен</option>
+                        <option value="cancelled" {% if order.status == 'cancelled' %}disabled{% endif %}>Отменен</option>
+                    </select>
+
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="bi bi-check-circle"></i> Обновить и уведомить клиента
+                    </button>
+                </form>
+
+                <hr>
+
+                <p class="small text-muted mb-0">
+                    <i class="bi bi-info-circle"></i> При изменении статуса клиент автоматически получит уведомление в Telegram
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

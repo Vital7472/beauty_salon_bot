@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}Пользователь {{ user.user_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>👤 {{ user.user_name }}</h2>
+        <a href="{{ url_for('users_list') }}" class="btn btn-secondary">◀️ Назад к списку</a>
+    </div>
+
+    <!-- Основная информация -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Основная информация</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Telegram ID:</th>
+                            <td>{{ user.user_id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Имя:</th>
+                            <td>{{ user.user_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Username:</th>
+                            <td>
+                                {% if user.username %}
+                                    <a href="https://t.me/{{ user.username }}" target="_blank">@{{ user.username }}</a>
+                                {% else %}
+                                    <span class="text-muted">Не указан</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Телефон:</th>
+                            <td>{{ user.phone or 'Не указан' }}</td>
+                        </tr>
+                        <tr>
+                            <th>День рождения:</th>
+                            <td>
+                                {{ user.birthday or 'Не указан' }}
+                                {% if user.birthday %}
+                                    <span class="badge bg-info ms-2">🎂</span>
+                                {% endif %}
+                                <button class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                                    <i class="bi bi-pencil"></i> Редактировать профиль
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Бонусы:</th>
+                            <td>
+                                <span class="badge bg-success fs-6">{{ user.bonus_points }} 💎</span>
+                                <button class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#adjustBonusModal">
+                                    <i class="bi bi-pencil"></i> Изменить
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Регистрация:</th>
+                            <td>{{ user.created_at[:16] if user.created_at else '—' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Статистика</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h3 class="text-primary">{{ stats.appointments_count }}</h3>
+                                    <small class="text-muted">Записей в салон</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h3 class="text-success">{{ stats.orders_count }}</h3>
+                                    <small class="text-muted">Заказов цветов</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h3 class="text-warning">{{ stats.reviews_count }}</h3>
+                                    <small class="text-muted">Отзывов</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h3 class="text-danger">{{ stats.total_spent }} ₽</h3>
+                                    <small class="text-muted">Всего потрачено</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Источник привлечения -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-signpost-2"></i> Источник привлечения</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <th>Тип источника:</th>
+                            <td>
+                                {% if user[14] == 'referral' %}
+                                    <span class="badge bg-success">Реферал</span>
+                                {% elif user[14] == 'utm' %}
+                                    <span class="badge bg-primary">UTM-кампания</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Органический</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% if user[9] %}
+                        <tr>
+                            <th>Источник:</th>
+                            <td><span class="badge bg-info">{{ user[9] }}</span></td>
+                        </tr>
+                        {% endif %}
+                        {% if user[10] %}
+                        <tr>
+                            <th>Канал:</th>
+                            <td>{{ user[10] }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if user[11] %}
+                        <tr>
+                            <th>Кампания:</th>
+                            <td>{{ user[11] }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if user[6] %}
+                        <tr>
+                            <th>Пригласил:</th>
+                            <td>
+                                <a href="{{ url_for('user_detail', user_id=user[6]) }}">
+                                    Пользователь #{{ user[6] }}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Записи в салон -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">💅 Записи в салон ({{ appointments|length }})</h5>
+        </div>
+        <div class="card-body">
+            {% if appointments %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Услуга</th>
+                            <th>Дата</th>
+                            <th>Время</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for apt in appointments[:10] %}
+                        <tr>
+                            <td>{{ apt.id }}</td>
+                            <td>{{ apt.service_name }}</td>
+                            <td>{{ apt.appointment_date }}</td>
+                            <td>{{ apt.time_slot }}</td>
+                            <td>
+                                {% if apt.status == 'confirmed' %}
+                                    <span class="badge bg-success">Подтверждена</span>
+                                {% elif apt.status == 'pending' %}
+                                    <span class="badge bg-warning">Ожидает</span>
+                                {% elif apt.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Отменена</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ apt.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <p class="text-muted">Нет записей</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Заказы цветов -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">🌸 Заказы цветов ({{ orders|length }})</h5>
+        </div>
+        <div class="card-body">
+            {% if orders %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Сумма</th>
+                            <th>Доставка</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders[:10] %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.total_amount }} ₽</td>
+                            <td>{{ order.delivery_type }}</td>
+                            <td>
+                                {% if order.status == 'completed' %}
+                                    <span class="badge bg-success">Выполнен</span>
+                                {% elif order.status == 'new' %}
+                                    <span class="badge bg-info">Новый</span>
+                                {% elif order.status == 'in_delivery' %}
+                                    <span class="badge bg-primary">В доставке</span>
+                                {% elif order.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Отменен</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ order.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ order.created_at[:10] if order.created_at else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <p class="text-muted">Нет заказов</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Отзывы -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">⭐ Отзывы ({{ reviews|length }})</h5>
+        </div>
+        <div class="card-body">
+            {% if reviews %}
+                {% for review in reviews %}
+                <div class="mb-3 p-3 border rounded">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>Оценка:</strong>
+                            {% for i in range(review.rating) %}⭐{% endfor %}
+                            ({{ review.rating }}/5)
+                        </div>
+                        <small class="text-muted">{{ review.created_at[:10] if review.created_at else '—' }}</small>
+                    </div>
+                    <p class="mb-0 mt-2">{{ review.text or 'Без комментария' }}</p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">Нет отзывов</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно изменения бонусов -->
+<div class="modal fade" id="adjustBonusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('user_bonus_adjust', user_id=user.user_id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Изменение бонусов</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        Текущий баланс: <strong>{{ user.bonus_points }} 💎</strong>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Количество баллов:</label>
+                        <input type="number" class="form-control" name="points" required
+                               placeholder="Положительное = начисление, отрицательное = списание">
+                        <div class="form-text">Например: 100 (начислить) или -50 (списать)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Описание операции:</label>
+                        <input type="text" class="form-control" name="description"
+                               value="Ручная корректировка администратором" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Применить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования профиля -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('admin_edit_user_profile', user_id=user.user_id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Редактирование профиля</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Имя</label>
+                        <input type="text" class="form-control" name="first_name"
+                               value="{{ user.user_name or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Телефон</label>
+                        <input type="text" class="form-control" name="phone"
+                               value="{{ user.phone or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">День рождения</label>
+                        <input type="date" class="form-control" name="birthday"
+                               value="{{ user.birthday or '' }}">
+                        <small class="text-muted">Формат: YYYY-MM-DD</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

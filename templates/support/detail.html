@@ -1,0 +1,79 @@
+{% extends "base_mvp.html" %}
+
+{% block title %}Обращение #{{ message.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Обращение #{{ message.id }}</h3>
+    <a href="{{ url_for('support_list') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Назад
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person"></i> Информация о клиенте</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Имя:</strong> {{ message.user_name }}</p>
+                <p><strong>Telegram ID:</strong> {{ message.user_id }}</p>
+                <p><strong>Дата обращения:</strong> {{ message.sent_at }}</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-chat-left-text"></i> Сообщение</h5>
+            </div>
+            <div class="card-body">
+                <p class="lead">{{ message.message }}</p>
+            </div>
+        </div>
+
+        {% if message.admin_reply %}
+        <div class="card mt-3 border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-check-circle"></i> Ваш ответ</h5>
+            </div>
+            <div class="card-body">
+                <p>{{ message.admin_reply }}</p>
+                <p class="small text-muted mb-0">Отправлено: {{ message.reply_sent_at or message.sent_at }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="bi bi-reply"></i> Ответить</h5>
+            </div>
+            <div class="card-body">
+                {% if message.admin_reply %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> Ответ уже отправлен
+                </div>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('support_reply', message_id=message.id) }}">
+                    <div class="mb-3">
+                        <label class="form-label">Текст ответа:</label>
+                        <textarea name="reply_text" class="form-control" rows="6" required placeholder="Введите ответ клиенту...">{{ message.admin_reply or '' }}</textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="bi bi-send"></i> Отправить ответ
+                    </button>
+                </form>
+
+                <hr>
+                <p class="small text-muted mb-0">
+                    <i class="bi bi-info-circle"></i> Ответ будет отправлен клиенту в Telegram
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

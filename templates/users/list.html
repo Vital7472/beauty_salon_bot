@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Пользователи{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>👥 Пользователи</h2>
+
+    <!-- Поиск -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <form method="GET" class="input-group">
+                <input type="text" name="search" class="form-control"
+                       placeholder="Поиск по имени, телефону, username..." value="{{ search }}">
+                <button class="btn btn-primary" type="submit">🔍 Найти</button>
+                {% if search %}
+                <a href="{{ url_for('users_list') }}" class="btn btn-secondary">✖ Сбросить</a>
+                {% endif %}
+            </form>
+        </div>
+        <div class="col-md-6 text-end">
+            <span class="badge bg-info fs-6">Всего пользователей: {{ total_users }}</span>
+        </div>
+    </div>
+
+    <!-- Таблица пользователей -->
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Username</th>
+                    <th>Телефон</th>
+                    <th>Бонусы</th>
+                    <th>Дата регистрации</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if users %}
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.user_id }}</td>
+                        <td>{{ user.user_name }}</td>
+                        <td>
+                            {% if user.username %}
+                                <a href="https://t.me/{{ user.username }}" target="_blank">@{{ user.username }}</a>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.phone or '—' }}</td>
+                        <td>
+                            <span class="badge bg-success">{{ user.bonus_points }} 💎</span>
+                        </td>
+                        <td>{{ user.created_at[:10] if user.created_at else '—' }}</td>
+                        <td>
+                            <a href="{{ url_for('user_detail', user_id=user.user_id) }}" class="btn btn-sm btn-info">
+                                👁️ Подробнее
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">
+                            {% if search %}
+                                Пользователи не найдены
+                            {% else %}
+                                Нет пользователей
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

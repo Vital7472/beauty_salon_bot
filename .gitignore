@@ -1,0 +1,47 @@
+# Секретные данные
+.env
+credentials.json
+
+# База данных и кэш
+data/
+*.pickle
+*.db
+*.db-journal
+
+# Загруженные файлы
+static/uploads/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Логи
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Виртуальное окружение
+venv/
+env/
+ENV/
+.venv
+
+# Тестовые файлы
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Бэкапы
+*.backup
+*.bak
+*~

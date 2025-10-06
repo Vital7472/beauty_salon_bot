@@ -1,0 +1,684 @@
+{% extends "base.html" %}
+
+{% block title %}Заказы цветов{% endblock %}
+{% block page_title %}💐 Управление заказами цветов{% endblock %}
+
+{% block content %}
+<style>
+    .order-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    .order-card.status-new {
+        border-left-color: #ffc107;
+        background-color: #fff9e6;
+    }
+    .order-card.status-confirmed {
+        border-left-color: #28a745;
+        background-color: #f0f9f4;
+    }
+    .order-card.status-in_delivery {
+        border-left-color: #007bff;
+        background-color: #e7f3ff;
+    }
+    .order-card.status-completed {
+        border-left-color: #17a2b8;
+        background-color: #e8f8fa;
+    }
+    .order-card.status-cancelled {
+        border-left-color: #dc3545;
+        background-color: #fef0f0;
+    }
+    .order-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .stats-card {
+        border-radius: 10px;
+        transition: transform 0.2s;
+    }
+    .stats-card:hover {
+        transform: scale(1.05);
+    }
+    .filter-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    .delivery-badge {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.6rem;
+    }
+    .item-list {
+        max-height: 120px;
+        overflow-y: auto;
+        font-size: 0.9rem;
+    }
+    .status-flow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 1rem 0;
+        position: relative;
+    }
+    .status-flow::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: #dee2e6;
+        z-index: 0;
+    }
+    .status-step {
+        position: relative;
+        z-index: 1;
+        background: white;
+        padding: 0.5rem;
+        text-align: center;
+        flex: 1;
+    }
+    .status-step.active {
+        color: #0d6efd;
+        font-weight: bold;
+    }
+    .status-step .step-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.5rem;
+        font-size: 1.2rem;
+    }
+    .status-step.active .step-icon {
+        background: #0d6efd;
+        color: white;
+    }
+    .status-step.completed .step-icon {
+        background: #28a745;
+        color: white;
+    }
+    .kanban-board {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+    }
+    .kanban-column {
+        min-width: 300px;
+        flex: 1;
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    .kanban-header {
+        font-weight: bold;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #dee2e6;
+    }
+    .kanban-card {
+        background: white;
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        border-left: 3px solid;
+        cursor: move;
+    }
+</style>
+
+<!-- Статистика -->
+<div class="row mb-3">
+    <div class="col-md mb-2">
+        <div class="card stats-card text-white bg-warning">
+            <div class="card-body text-center py-2">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="bi bi-exclamation-circle fs-4 me-2"></i>
+                    <div>
+                        <h4 class="mb-0">{{ orders|selectattr('status', 'equalto', 'new')|list|length }}</h4>
+                        <small>Новые</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md mb-2">
+        <div class="card stats-card text-white bg-success">
+            <div class="card-body text-center py-2">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="bi bi-check-circle fs-4 me-2"></i>
+                    <div>
+                        <h4 class="mb-0">{{ orders|selectattr('status', 'equalto', 'confirmed')|list|length }}</h4>
+                        <small>Подтверждено</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md mb-2">
+        <div class="card stats-card text-white bg-primary">
+            <div class="card-body text-center py-2">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="bi bi-truck fs-4 me-2"></i>
+                    <div>
+                        <h4 class="mb-0">{{ orders|selectattr('status', 'equalto', 'in_delivery')|list|length }}</h4>
+                        <small>В доставке</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md mb-2">
+        <div class="card stats-card text-white bg-info">
+            <div class="card-body text-center py-2">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="bi bi-check-all fs-4 me-2"></i>
+                    <div>
+                        <h4 class="mb-0">{{ orders|selectattr('status', 'equalto', 'completed')|list|length }}</h4>
+                        <small>Выполнено</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md mb-2">
+        <div class="card stats-card text-white bg-secondary">
+            <div class="card-body text-center py-2">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="bi bi-flower2 fs-4 me-2"></i>
+                    <div>
+                        <h4 class="mb-0">{{ orders|length }}</h4>
+                        <small>Всего</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Фильтры и переключатель вида -->
+<div class="card filter-section mb-4">
+    <div class="row align-items-end">
+        <div class="col-md-3">
+            <label class="form-label fw-bold">
+                <i class="bi bi-funnel"></i> Статус:
+            </label>
+            <form method="GET" id="filterForm">
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">Все заказы</option>
+                    <option value="new" {% if status == 'new' %}selected{% endif %}>🆕 Новые</option>
+                    <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %}>✅ Подтверждено</option>
+                    <option value="in_delivery" {% if status == 'in_delivery' %}selected{% endif %}>🚚 В доставке</option>
+                    <option value="completed" {% if status == 'completed' %}selected{% endif %}>✔️ Выполнено</option>
+                    <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>❌ Отменено</option>
+                </select>
+            </form>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-bold">
+                <i class="bi bi-geo-alt"></i> Тип доставки:
+            </label>
+            <select class="form-select" id="deliveryFilter" onchange="filterByDelivery()">
+                <option value="">Все типы</option>
+                <option value="delivery">Доставка</option>
+                <option value="pickup">Самовывоз</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-bold">
+                <i class="bi bi-search"></i> Поиск:
+            </label>
+            <input type="text" class="form-control" id="searchInput" placeholder="Имя, телефон, адрес..." onkeyup="searchOrders()">
+        </div>
+        <div class="col-md-2">
+            <div class="btn-group w-100" role="group">
+                <button type="button" class="btn btn-outline-primary active" onclick="switchView('cards')" id="cardsViewBtn" title="Карточки">
+                    <i class="bi bi-grid-3x3"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary" onclick="switchView('table')" id="tableViewBtn" title="Таблица">
+                    <i class="bi bi-list"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary" onclick="switchView('kanban')" id="kanbanViewBtn" title="Канбан">
+                    <i class="bi bi-kanban"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Вид карточек -->
+<div id="cardsView">
+    {% if orders %}
+        <div class="row" id="ordersContainer">
+            {% for order in orders %}
+            <div class="col-md-6 col-lg-4 mb-3 order-item"
+                 data-status="{{ order.status }}"
+                 data-delivery="{{ order.delivery_type }}"
+                 data-search="{{ order.user_name|lower }} {{ order.phone }} {{ order.delivery_address|lower if order.delivery_address else '' }}">
+                <div class="card order-card status-{{ order.status }} h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-dark">#{{ order.id }}</span>
+                        {% if order.status == 'new' %}
+                            <span class="badge bg-warning text-dark">🆕 Новый</span>
+                        {% elif order.status == 'confirmed' %}
+                            <span class="badge bg-success">✅ Подтверждено</span>
+                        {% elif order.status == 'in_delivery' %}
+                            <span class="badge bg-primary">🚚 В доставке</span>
+                        {% elif order.status == 'completed' %}
+                            <span class="badge bg-info">✔️ Выполнено</span>
+                        {% elif order.status == 'cancelled' %}
+                            <span class="badge bg-danger">❌ Отменено</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i class="bi bi-person-circle"></i> {{ order.user_name }}
+                        </h5>
+
+                        <div class="mb-2">
+                            <i class="bi bi-calendar3 text-primary"></i>
+                            <small class="text-muted">{{ order.created_at[:16] if order.created_at else 'N/A' }}</small>
+                        </div>
+
+                        <div class="mb-2">
+                            <i class="bi bi-telephone text-danger"></i>
+                            {% if order.phone %}
+                                <a href="tel:{{ order.phone }}" class="text-decoration-none">{{ order.phone }}</a>
+                            {% else %}
+                                <span class="text-muted">Не указан</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {% if order.delivery_type == 'pickup' %}
+                                <span class="badge delivery-badge bg-secondary">
+                                    <i class="bi bi-shop"></i> Самовывоз
+                                </span>
+                            {% else %}
+                                <span class="badge delivery-badge bg-primary">
+                                    <i class="bi bi-truck"></i> Доставка
+                                </span>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="bi bi-geo-alt"></i>
+                                        {{ order.delivery_address[:50] if order.delivery_address else 'Адрес не указан' }}
+                                        {% if order.delivery_address and order.delivery_address|length > 50 %}...{% endif %}
+                                    </small>
+                                </div>
+                                {% if order.delivery_time %}
+                                <div class="mt-1">
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i> {{ order.delivery_time }}
+                                    </small>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <strong>Состав заказа:</strong>
+                            <div class="item-list">
+                                {% set items_str = order.get('items', '[]') or '[]' %}
+                                {% set items_list = items_str | parse_json %}
+                                {% if items_list %}
+                                    {% for item in items_list %}
+                                        <div class="mb-1">
+                                            <small>
+                                                • {{ item.name }}
+                                                {% if item.quantity > 1 %}
+                                                    <span class="badge bg-secondary">×{{ item.quantity }}</span>
+                                                {% endif %}
+                                                {% if item.price > 0 %}
+                                                    - {{ item.price }} ₽
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <small class="text-muted">Не указан</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if order.card_text %}
+                        <div class="alert alert-light py-2 mb-3">
+                            <small>
+                                <i class="bi bi-card-text"></i>
+                                <strong>Текст открытки:</strong><br>
+                                {{ order.card_text }}
+                            </small>
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <i class="bi bi-cash-stack text-success"></i>
+                            <strong class="fs-5">{{ order.total_amount }} ₽</strong>
+                            {% if order.paid %}
+                                <span class="badge bg-success ms-2"><i class="bi bi-check-circle"></i> Оплачено</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark ms-2"><i class="bi bi-clock"></i> Ожидает оплаты</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Прогресс заказа -->
+                        <div class="status-flow mb-3">
+                            <div class="status-step {{ 'completed' if order.status in ['confirmed', 'in_delivery', 'completed'] else ('active' if order.status == 'new' else '') }}">
+                                <div class="step-icon"><i class="bi bi-bag-plus"></i></div>
+                                <small>Новый</small>
+                            </div>
+                            <div class="status-step {{ 'completed' if order.status in ['in_delivery', 'completed'] else ('active' if order.status == 'confirmed' else '') }}">
+                                <div class="step-icon"><i class="bi bi-check"></i></div>
+                                <small>Подтв.</small>
+                            </div>
+                            <div class="status-step {{ 'completed' if order.status == 'completed' else ('active' if order.status == 'in_delivery' else '') }}">
+                                <div class="step-icon"><i class="bi bi-truck"></i></div>
+                                <small>Доставка</small>
+                            </div>
+                            <div class="status-step {{ 'completed' if order.status == 'completed' else '' }}">
+                                <div class="step-icon"><i class="bi bi-check-all"></i></div>
+                                <small>Готово</small>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            {% if order.status == 'new' %}
+                                <form method="POST" action="{{ url_for('order_update_status', order_id=order.id) }}" class="d-inline">
+                                    <input type="hidden" name="status" value="confirmed">
+                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                        <i class="bi bi-check-lg"></i> Подтвердить
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('order_update_status', order_id=order.id) }}" class="d-inline">
+                                    <input type="hidden" name="status" value="cancelled">
+                                    <button type="submit" class="btn btn-danger btn-sm w-100">
+                                        <i class="bi bi-x-lg"></i> Отменить
+                                    </button>
+                                </form>
+                            {% elif order.status == 'confirmed' %}
+                                <form method="POST" action="{{ url_for('order_update_status', order_id=order.id) }}" class="d-inline">
+                                    <input type="hidden" name="status" value="in_delivery">
+                                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                                        <i class="bi bi-truck"></i> В доставку
+                                    </button>
+                                </form>
+                            {% elif order.status == 'in_delivery' %}
+                                <form method="POST" action="{{ url_for('order_update_status', order_id=order.id) }}" class="d-inline">
+                                    <input type="hidden" name="status" value="completed">
+                                    <button type="submit" class="btn btn-info btn-sm w-100">
+                                        <i class="bi bi-check-circle"></i> Завершить
+                                    </button>
+                                </form>
+                            {% endif %}
+                            <a href="{{ url_for('user_detail', user_id=order.user_id) }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-person"></i> Профиль клиента
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle fs-3"></i>
+            <p class="mb-0 mt-2">Нет заказов {% if status %}по выбранному фильтру{% endif %}</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Табличный вид -->
+<div id="tableView" style="display: none;">
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Дата</th>
+                            <th>Клиент</th>
+                            <th>Телефон</th>
+                            <th>Состав</th>
+                            <th>Доставка</th>
+                            <th>Сумма</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td><strong>#{{ order.id }}</strong></td>
+                            <td><small>{{ order.created_at[:16] if order.created_at else 'N/A' }}</small></td>
+                            <td>{{ order.user_name }}</td>
+                            <td>
+                                {% if order.phone %}
+                                    <a href="tel:{{ order.phone }}">{{ order.phone }}</a>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-truncate d-inline-block" style="max-width: 150px;">
+                                    {% set order_items = order.get('items', '-') or '-' %}
+                                    {{ order_items[:40] if order_items != '-' else '-' }}
+                                    {% if order_items != '-' and order_items|length > 40 %}...{% endif %}
+                                </small>
+                            </td>
+                            <td>
+                                {% if order.delivery_type == 'pickup' %}
+                                    <span class="badge bg-secondary">Самовывоз</span>
+                                {% else %}
+                                    <span class="badge bg-primary">Доставка</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ order.total_amount }} ₽</strong></td>
+                            <td>
+                                {% if order.status == 'new' %}
+                                    <span class="badge bg-warning text-dark">🆕 Новый</span>
+                                {% elif order.status == 'confirmed' %}
+                                    <span class="badge bg-success">✅ Подтв.</span>
+                                {% elif order.status == 'in_delivery' %}
+                                    <span class="badge bg-primary">🚚 Доставка</span>
+                                {% elif order.status == 'completed' %}
+                                    <span class="badge bg-info">✔️ Готово</span>
+                                {% elif order.status == 'cancelled' %}
+                                    <span class="badge bg-danger">❌ Отмена</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    {% if order.status == 'new' %}
+                                        <form method="POST" action="{{ url_for('order_update_status', order_id=order.id) }}" class="d-inline">
+                                            <input type="hidden" name="status" value="confirmed">
+                                            <button type="submit" class="btn btn-success" title="Подтвердить"><i class="bi bi-check-lg"></i></button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('order_update_status', order_id=order.id) }}" class="d-inline">
+                                            <input type="hidden" name="status" value="cancelled">
+                                            <button type="submit" class="btn btn-danger" title="Отменить"><i class="bi bi-x-lg"></i></button>
+                                        </form>
+                                    {% elif order.status == 'confirmed' %}
+                                        <form method="POST" action="{{ url_for('order_update_status', order_id=order.id) }}" class="d-inline">
+                                            <input type="hidden" name="status" value="in_delivery">
+                                            <button type="submit" class="btn btn-primary" title="В доставку"><i class="bi bi-truck"></i></button>
+                                        </form>
+                                    {% elif order.status == 'in_delivery' %}
+                                        <form method="POST" action="{{ url_for('order_update_status', order_id=order.id) }}" class="d-inline">
+                                            <input type="hidden" name="status" value="completed">
+                                            <button type="submit" class="btn btn-info" title="Завершить"><i class="bi bi-check-circle"></i></button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Канбан вид -->
+<div id="kanbanView" style="display: none;">
+    <div class="kanban-board">
+        <!-- Новые -->
+        <div class="kanban-column">
+            <div class="kanban-header text-warning">
+                <i class="bi bi-exclamation-circle"></i> Новые ({{ orders|selectattr('status', 'equalto', 'new')|list|length }})
+            </div>
+            {% for order in orders if order.status == 'new' %}
+            <div class="kanban-card" style="border-left-color: #ffc107;">
+                <strong>#{{ order.id }}</strong> - {{ order.user_name }}<br>
+                <small>{{ order.total_amount }} ₽</small><br>
+                {% set order_items = order.get('items', '-') or '-' %}
+                <small class="text-muted">{{ order_items[:30] if order_items != '-' else '-' }}...</small>
+                <form method="POST" action="{{ url_for('order_update_status', order_id=order.id) }}" class="mt-2">
+                    <input type="hidden" name="status" value="confirmed">
+                    <button type="submit" class="btn btn-sm btn-success w-100">Подтвердить</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Подтверждено -->
+        <div class="kanban-column">
+            <div class="kanban-header text-success">
+                <i class="bi bi-check-circle"></i> Подтверждено ({{ orders|selectattr('status', 'equalto', 'confirmed')|list|length }})
+            </div>
+            {% for order in orders if order.status == 'confirmed' %}
+            <div class="kanban-card" style="border-left-color: #28a745;">
+                <strong>#{{ order.id }}</strong> - {{ order.user_name }}<br>
+                <small>{{ order.total_amount }} ₽</small><br>
+                {% set order_items = order.get('items', '-') or '-' %}
+                <small class="text-muted">{{ order_items[:30] if order_items != '-' else '-' }}...</small>
+                <form method="POST" action="{{ url_for('order_update_status', order_id=order.id) }}" class="mt-2">
+                    <input type="hidden" name="status" value="in_delivery">
+                    <button type="submit" class="btn btn-sm btn-primary w-100">В доставку</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- В доставке -->
+        <div class="kanban-column">
+            <div class="kanban-header text-primary">
+                <i class="bi bi-truck"></i> В доставке ({{ orders|selectattr('status', 'equalto', 'in_delivery')|list|length }})
+            </div>
+            {% for order in orders if order.status == 'in_delivery' %}
+            <div class="kanban-card" style="border-left-color: #007bff;">
+                <strong>#{{ order.id }}</strong> - {{ order.user_name }}<br>
+                <small>{{ order.total_amount }} ₽</small><br>
+                <small class="text-muted">
+                    {% if order.delivery_address %}
+                        <i class="bi bi-geo-alt"></i> {{ order.delivery_address[:25] }}...
+                    {% else %}
+                        Самовывоз
+                    {% endif %}
+                </small>
+                <form method="POST" action="{{ url_for('order_update_status', order_id=order.id) }}" class="mt-2">
+                    <input type="hidden" name="status" value="completed">
+                    <button type="submit" class="btn btn-sm btn-info w-100">Завершить</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Выполнено -->
+        <div class="kanban-column">
+            <div class="kanban-header text-info">
+                <i class="bi bi-check-all"></i> Выполнено ({{ orders|selectattr('status', 'equalto', 'completed')|list|length }})
+            </div>
+            {% for order in orders if order.status == 'completed' %}
+            <div class="kanban-card" style="border-left-color: #17a2b8;">
+                <strong>#{{ order.id }}</strong> - {{ order.user_name }}<br>
+                <small>{{ order.total_amount }} ₽</small><br>
+                <small class="text-muted">{{ order.created_at[:10] if order.created_at else 'N/A' }}</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Инструкции -->
+<div class="card mt-4">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="bi bi-info-circle"></i> Управление заказами</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Статусы заказов:</h6>
+                <ul class="small">
+                    <li><span class="badge bg-warning text-dark">🆕 Новый</span> - заказ принят, ожидает подтверждения</li>
+                    <li><span class="badge bg-success">✅ Подтверждено</span> - заказ подтвержден, готовится</li>
+                    <li><span class="badge bg-primary">🚚 В доставке</span> - заказ передан курьеру</li>
+                    <li><span class="badge bg-info">✔️ Выполнено</span> - заказ доставлен клиенту</li>
+                    <li><span class="badge bg-danger">❌ Отменено</span> - заказ отменен</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>Возможности:</h6>
+                <ul class="small">
+                    <li>Переключайте статусы кнопками действий</li>
+                    <li>Клиент получает уведомления автоматически</li>
+                    <li>Используйте канбан для визуального управления</li>
+                    <li>Фильтруйте заказы по статусу и типу доставки</li>
+                    <li>Просмотр индикатора прогресса заказа</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Переключение видов
+function switchView(view) {
+    document.getElementById('cardsView').style.display = view === 'cards' ? 'block' : 'none';
+    document.getElementById('tableView').style.display = view === 'table' ? 'block' : 'none';
+    document.getElementById('kanbanView').style.display = view === 'kanban' ? 'block' : 'none';
+
+    document.getElementById('cardsViewBtn').classList.toggle('active', view === 'cards');
+    document.getElementById('tableViewBtn').classList.toggle('active', view === 'table');
+    document.getElementById('kanbanViewBtn').classList.toggle('active', view === 'kanban');
+}
+
+// Поиск
+function searchOrders() {
+    const searchText = document.getElementById('searchInput').value.toLowerCase();
+    const items = document.querySelectorAll('.order-item');
+
+    items.forEach(item => {
+        const searchData = item.dataset.search;
+        if (searchData.includes(searchText)) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+// Фильтр по типу доставки
+function filterByDelivery() {
+    const deliveryFilter = document.getElementById('deliveryFilter').value;
+    const items = document.querySelectorAll('.order-item');
+
+    items.forEach(item => {
+        if (!deliveryFilter || item.dataset.delivery === deliveryFilter) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+// Автообновление каждые 30 секунд
+setInterval(() => {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

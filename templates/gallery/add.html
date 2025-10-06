@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить фото в галерею{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>📸 Добавить фото в галерею</h2>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Категория *</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Выберите категорию</option>
+                                <option value="Салон">Салон красоты</option>
+                                <option value="Цветы">Цветочный магазин</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="photo_file" class="form-label">Загрузить фото *</label>
+                            <input type="file" class="form-control" id="photo_file" name="photo_file"
+                                   accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" required>
+                            <div class="form-text">
+                                Поддерживаемые форматы: PNG, JPG, JPEG, GIF, WEBP. Максимальный размер: 10 МБ
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Описание</label>
+                            <textarea class="form-control" id="description" name="description"
+                                      rows="3" placeholder="Описание работы..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Стоимость (₽)</label>
+                            <input type="number" class="form-control" id="price" name="price"
+                                   value="0" min="0" placeholder="0">
+                            <div class="form-text">
+                                Укажите 0, если не хотите отображать цену
+                            </div>
+                        </div>
+
+                        <!-- Превью фото -->
+                        <div class="mb-3" id="preview-container" style="display: none;">
+                            <label class="form-label">Предпросмотр:</label>
+                            <div class="text-center">
+                                <img id="preview-image" src="" alt="Preview" class="img-fluid rounded" style="max-height: 300px;">
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                ➕ Добавить фото
+                            </button>
+                            <a href="{{ url_for('gallery_list') }}" class="btn btn-secondary">
+                                ◀️ Назад к галерее
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-3">
+                <strong>💡 Совет:</strong> Загружайте качественные фотографии ваших работ, чтобы клиенты могли оценить результат!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Предпросмотр изображения перед загрузкой
+        document.getElementById('photo_file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('preview-image').src = e.target.result;
+                    document.getElementById('preview-container').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</div>
+{% endblock %}
