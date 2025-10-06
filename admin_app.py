@@ -11,7 +11,7 @@ from datetime import datetime
 # Импорты из database
 from database import (
     # Пользователи
-    get_all_users, get_user_by_id,
+    get_all_users, get_user,
     # Галерея
     get_gallery_photos, get_gallery_photo_by_id, add_gallery_photo, delete_gallery_photo,
     # Заказы цветов
@@ -246,7 +246,7 @@ def users_list():
 @login_required
 def user_detail(user_id):
     """Детали пользователя"""
-    user = get_user_by_id(user_id)
+    user = get_user(user_id)
 
     if not user:
         flash('Пользователь не найден', 'error')
