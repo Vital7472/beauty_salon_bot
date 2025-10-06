@@ -55,8 +55,9 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        # Простая авторизация (в продакшене использовать хеширование)
-        if username == 'admin' and password == 'admin123':
+        # Авторизация с паролем из .env
+        admin_password = os.getenv('ADMIN_PASSWORD', 'admin123')
+        if username == 'admin' and password == admin_password:
             session['logged_in'] = True
             session['username'] = username
             flash('Вход выполнен успешно!', 'success')
