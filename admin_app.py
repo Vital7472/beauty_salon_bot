@@ -87,15 +87,15 @@ def index():
     # Статистика
     users = get_all_users()
     orders = get_flower_orders(status='new')
-    support_messages = get_support_messages()
 
-    # Непрочитанные сообщения поддержки
-    unread_support = [msg for msg in support_messages if not msg.get('admin_reply')]
+    # TODO: Восстановить после добавления функций поддержки
+    # support_messages = get_support_messages()
+    # unread_support = [msg for msg in support_messages if not msg.get('admin_reply')]
 
     stats = {
         'users_total': len(users),
         'orders_new': len(orders),
-        'support_unread': len(unread_support),
+        'support_unread': 0,  # Временно 0, пока нет функций поддержки
     }
 
     return render_template('index.html', stats=stats)
