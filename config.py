@@ -34,11 +34,9 @@ except ValueError:
     raise ValueError(f"❌ ADMIN_ID должен быть числом, получено: {ADMIN_ID}")
 
 GOOGLE_SHEET_ID = os.getenv('GOOGLE_SHEET_ID')
+# Google Sheets опционально - можно работать без него
 if not GOOGLE_SHEET_ID:
-    raise ValueError(
-        "❌ GOOGLE_SHEET_ID не установлен!\n"
-        "Создайте файл .env и добавьте: GOOGLE_SHEET_ID=id_вашей_таблицы"
-    )
+    GOOGLE_SHEET_ID = None
 
 # ADMIN_GROUP_ID опциональный, можно не указывать
 ADMIN_GROUP_ID = os.getenv('ADMIN_GROUP_ID')
