@@ -3,7 +3,7 @@
 Функционал: Галерея, Заказы цветов, Пользователи, Техподдержка
 """
 
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from functools import wraps
 import os
 from datetime import datetime
@@ -20,6 +20,10 @@ from database import (
     # get_support_messages, get_support_message_by_id, get_user_support_messages,
     # send_support_message_to_user
 )
+
+# Создаем Blueprint с URL префиксом из переменной окружения
+ADMIN_PATH = os.getenv('ADMIN_PATH', '')
+bp = Blueprint('admin', __name__, url_prefix=ADMIN_PATH if ADMIN_PATH else None)
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev_secret_key_change_in_production')
@@ -39,12 +43,12 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'logged_in' not in session:
-            return redirect(url_for('login'))
+            return redirect(url_for('admin.login'))
         return f(*args, **kwargs)
     return decorated_function
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@bp.route('/login', methods=['GET', 'POST'])
 def login():
     """Страница входа"""
     if request.method == 'POST':
@@ -56,26 +60,26 @@ def login():
             session['logged_in'] = True
             session['username'] = username
             flash('Вход выполнен успешно!', 'success')
-            return redirect(url_for('index'))
+            return redirect(url_for('admin.index'))
         else:
             flash('Неверный логин или пароль', 'error')
 
     return render_template('login.html')
 
 
-@app.route('/logout')
+@bp.route('/logout')
 def logout():
     """Выход"""
     session.clear()
     flash('Вы вышли из системы', 'info')
-    return redirect(url_for('login'))
+    return redirect(url_for('admin.login'))
 
 
 # =================================================================
 # ГЛАВНАЯ СТРАНИЦА
 # =================================================================
 
-@app.route('/')
+@bp.route('/')
 @login_required
 def index():
     """Дашборд"""
@@ -100,7 +104,7 @@ def index():
 # ГАЛЕРЕЯ
 # =================================================================
 
-@app.route('/gallery')
+@bp.route('/gallery')
 @login_required
 def gallery_list():
     """Список фото галереи"""
@@ -119,7 +123,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@app.route('/gallery/add', methods=['GET', 'POST'])
+@bp.route('/gallery/add', methods=['GET', 'POST'])
 @login_required
 def gallery_add():
     """Добавить фото"""
@@ -154,14 +158,14 @@ def gallery_add():
             add_gallery_item(category, filename, description, 0)
 
             flash('Фото добавлено в галерею', 'success')
-            return redirect(url_for('gallery_list'))
+            return redirect(url_for('admin.gallery_list'))
         else:
             flash('Недопустимый формат файла. Используйте: PNG, JPG, JPEG, GIF', 'error')
 
     return render_template('gallery/add.html')
 
 
-@app.route('/gallery/<int:photo_id>/delete', methods=['POST'])
+@bp.route('/gallery/<int:photo_id>/delete', methods=['POST'])
 @login_required
 def gallery_delete(photo_id):
     """Удалить фото"""
@@ -179,14 +183,14 @@ def gallery_delete(photo_id):
     else:
         flash('Фото не найдено', 'error')
 
-    return redirect(url_for('gallery_list'))
+    return redirect(url_for('admin.gallery_list'))
 
 
 # =================================================================
 # ЗАКАЗЫ ЦВЕТОВ
 # =================================================================
 
-@app.route('/orders')
+@bp.route('/orders')
 @login_required
 def orders_list():
     """Список заказов"""
@@ -200,7 +204,7 @@ def orders_list():
     return render_template('orders/list.html', orders=orders, status_filter=status_filter)
 
 
-@app.route('/orders/<int:order_id>')
+@bp.route('/orders/<int:order_id>')
 @login_required
 def order_detail(order_id):
     """Детали заказа"""
@@ -208,12 +212,12 @@ def order_detail(order_id):
 
     if not order:
         flash('Заказ не найден', 'error')
-        return redirect(url_for('orders_list'))
+        return redirect(url_for('admin.orders_list'))
 
     return render_template('orders/detail.html', order=order)
 
 
-@app.route('/orders/<int:order_id>/status', methods=['POST'])
+@bp.route('/orders/<int:order_id>/status', methods=['POST'])
 @login_required
 def order_update_status(order_id):
     """Обновить статус заказа"""
@@ -234,7 +238,7 @@ def order_update_status(order_id):
 # ПОЛЬЗОВАТЕЛИ
 # =================================================================
 
-@app.route('/users')
+@bp.route('/users')
 @login_required
 def users_list():
     """Список пользователей"""
@@ -242,7 +246,7 @@ def users_list():
     return render_template('users/list.html', users=users)
 
 
-@app.route('/users/<int:user_id>')
+@bp.route('/users/<int:user_id>')
 @login_required
 def user_detail(user_id):
     """Детали пользователя"""
@@ -250,7 +254,7 @@ def user_detail(user_id):
 
     if not user:
         flash('Пользователь не найден', 'error')
-        return redirect(url_for('users_list'))
+        return redirect(url_for('admin.users_list'))
 
     # Получить заказы пользователя
     user_orders = get_flower_orders(user_id=user_id)
@@ -269,7 +273,7 @@ def user_detail(user_id):
 # =================================================================
 
 # TODO: Восстановить после добавления функций поддержки в database.py
-# @app.route('/support')
+# @bp.route('/support')
 # @login_required
 # def support_list():
 #     """Список обращений"""
@@ -277,7 +281,7 @@ def user_detail(user_id):
 #     return render_template('support/list.html', messages=messages)
 #
 #
-# @app.route('/support/<int:message_id>')
+# @bp.route('/support/<int:message_id>')
 # @login_required
 # def support_detail(message_id):
 #     """Детали обращения"""
@@ -290,7 +294,7 @@ def user_detail(user_id):
 #     return render_template('support/detail.html', message=message)
 #
 #
-# @app.route('/support/<int:message_id>/reply', methods=['POST'])
+# @bp.route('/support/<int:message_id>/reply', methods=['POST'])
 # @login_required
 # def support_reply(message_id):
 #     """Ответить на обращение"""
@@ -317,13 +321,19 @@ def user_detail(user_id):
 
 
 # =================================================================
-# ЗАПУСК
+# РЕГИСТРАЦИЯ BLUEPRINT И ЗАПУСК
 # =================================================================
+
+# Регистрируем Blueprint
+app.register_blueprint(bp)
 
 if __name__ == '__main__':
     print("=" * 60)
     print("🚀 Запуск админ-панели MVP...")
-    print("📍 URL: http://localhost:5000")
+    if ADMIN_PATH:
+        print(f"📍 URL: http://localhost:5000{ADMIN_PATH}")
+    else:
+        print("📍 URL: http://localhost:5000")
     print("👤 Логин: admin")
     print("🔑 Пароль: admin123")
     print("=" * 60)
