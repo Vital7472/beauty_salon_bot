@@ -13,7 +13,7 @@ from database import (
     # Пользователи
     get_all_users, get_user,
     # Галерея
-    get_gallery_photos, get_gallery_photo_by_id, add_gallery_photo, delete_gallery_photo,
+    get_gallery_items, get_gallery_item_by_id, add_gallery_item, delete_gallery_item,
     # Заказы цветов
     get_flower_orders, get_flower_order_by_id, update_flower_order_status,
     # Техподдержка
@@ -107,9 +107,9 @@ def gallery_list():
     category = request.args.get('category', 'all')
 
     if category == 'all':
-        photos = get_gallery_photos()
+        photos = get_gallery_items()
     else:
-        photos = [p for p in get_gallery_photos() if p.get('category') == category]
+        photos = [p for p in get_gallery_items() if p.get('category') == category]
 
     return render_template('gallery/list.html', photos=photos, category=category)
 
@@ -151,7 +151,7 @@ def gallery_add():
             file.save(filepath)
 
             # Сохранить в БД
-            add_gallery_photo(filename, category, description)
+            add_gallery_item(category, filename, description, 0)
 
             flash('Фото добавлено в галерею', 'success')
             return redirect(url_for('gallery_list'))
@@ -165,7 +165,7 @@ def gallery_add():
 @login_required
 def gallery_delete(photo_id):
     """Удалить фото"""
-    photo = get_gallery_photo_by_id(photo_id)
+    photo = get_gallery_item_by_id(photo_id)
 
     if photo:
         # Удалить файл
@@ -174,7 +174,7 @@ def gallery_delete(photo_id):
             os.remove(filepath)
 
         # Удалить из БД
-        delete_gallery_photo(photo_id)
+        delete_gallery_item(photo_id)
         flash('Фото удалено', 'success')
     else:
         flash('Фото не найдено', 'error')
