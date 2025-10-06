@@ -15,10 +15,10 @@ from database import (
     # Галерея
     get_gallery_items, get_gallery_item_by_id, add_gallery_item, delete_gallery_item,
     # Заказы цветов
-    get_flower_orders, get_flower_order_by_id, update_flower_order_status,
-    # Техподдержка
-    get_support_messages, get_support_message_by_id, get_user_support_messages,
-    send_support_message_to_user
+    get_flower_orders, get_flower_order_by_id, update_flower_order_status
+    # Техподдержка - TODO: добавить функции в database.py
+    # get_support_messages, get_support_message_by_id, get_user_support_messages,
+    # send_support_message_to_user
 )
 
 app = Flask(__name__)
@@ -268,51 +268,52 @@ def user_detail(user_id):
 # ТЕХПОДДЕРЖКА
 # =================================================================
 
-@app.route('/support')
-@login_required
-def support_list():
-    """Список обращений"""
-    messages = get_support_messages()
-    return render_template('support/list.html', messages=messages)
-
-
-@app.route('/support/<int:message_id>')
-@login_required
-def support_detail(message_id):
-    """Детали обращения"""
-    message = get_support_message_by_id(message_id)
-
-    if not message:
-        flash('Сообщение не найдено', 'error')
-        return redirect(url_for('support_list'))
-
-    return render_template('support/detail.html', message=message)
-
-
-@app.route('/support/<int:message_id>/reply', methods=['POST'])
-@login_required
-def support_reply(message_id):
-    """Ответить на обращение"""
-    reply_text = request.form.get('reply_text')
-
-    if not reply_text:
-        flash('Введите текст ответа', 'error')
-        return redirect(url_for('support_detail', message_id=message_id))
-
-    message = get_support_message_by_id(message_id)
-
-    if message:
-        # Отправить ответ пользователю
-        success = send_support_message_to_user(message['user_id'], reply_text, message_id)
-
-        if success:
-            flash('Ответ отправлен пользователю', 'success')
-        else:
-            flash('Ошибка отправки ответа', 'error')
-    else:
-        flash('Сообщение не найдено', 'error')
-
-    return redirect(url_for('support_detail', message_id=message_id))
+# TODO: Восстановить после добавления функций поддержки в database.py
+# @app.route('/support')
+# @login_required
+# def support_list():
+#     """Список обращений"""
+#     messages = get_support_messages()
+#     return render_template('support/list.html', messages=messages)
+#
+#
+# @app.route('/support/<int:message_id>')
+# @login_required
+# def support_detail(message_id):
+#     """Детали обращения"""
+#     message = get_support_message_by_id(message_id)
+#
+#     if not message:
+#         flash('Сообщение не найдено', 'error')
+#         return redirect(url_for('support_list'))
+#
+#     return render_template('support/detail.html', message=message)
+#
+#
+# @app.route('/support/<int:message_id>/reply', methods=['POST'])
+# @login_required
+# def support_reply(message_id):
+#     """Ответить на обращение"""
+#     reply_text = request.form.get('reply_text')
+#
+#     if not reply_text:
+#         flash('Введите текст ответа', 'error')
+#         return redirect(url_for('support_detail', message_id=message_id))
+#
+#     message = get_support_message_by_id(message_id)
+#
+#     if message:
+#         # Отправить ответ пользователю
+#         success = send_support_message_to_user(message['user_id'], reply_text, message_id)
+#
+#         if success:
+#             flash('Ответ отправлен пользователю', 'success')
+#         else:
+#             flash('Ошибка отправки ответа', 'error')
+#     else:
+#         flash('Сообщение не найдено', 'error')
+#
+#     return redirect(url_for('support_detail', message_id=message_id))
 
 
 # =================================================================
